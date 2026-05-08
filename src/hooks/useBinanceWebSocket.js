@@ -7,6 +7,7 @@ const WS_STATES = {
   2: 'CLOSING',
   3: 'CLOSED',
 }
+const MAX_WEBSOCKET_SYMBOLS = 40
 
 const getEnv = (viteKey, reactKey, fallback) => {
   const env = import.meta.env || {}
@@ -25,7 +26,7 @@ export const useBinanceWebSocket = (symbols) => {
   )
 
   const stableSymbols = useMemo(
-    () => Array.from(new Set(symbols)).filter(Boolean).slice(0, 40),
+    () => Array.from(new Set(symbols)).filter(Boolean).slice(0, MAX_WEBSOCKET_SYMBOLS),
     [symbols],
   )
 
