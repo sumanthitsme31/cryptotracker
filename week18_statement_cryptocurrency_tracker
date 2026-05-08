@@ -1,0 +1,379 @@
+Build a Real-Time Cryptocurrency Tracker with Binance WebSocket API and React
+Objective
+You will build a feature-rich, real-time cryptocurrency tracking dashboard. 
+You'll learn to integrate with WebSocket APIs for live data streams, manage 
+complex application state, implement advanced data visualizations like charts and 
+sparklines, and persist user data using local storage. This project is highly 
+relevant for roles in FinTech, data analytics, and any field requiring real-time, 
+data-intensive user interfaces.
+
+Description
+Background
+In the fast-paced world of financial markets, real-time data is critical. 
+Cryptocurrency trading platforms rely on instant price updates to provide users 
+with accurate information for making trades, managing portfolios, and monitoring 
+market movements. Traditional REST APIs, which operate on a request-response 
+model, are often inefficient for this use case, as they require constant polling 
+from the client, leading to high latency and wasted resources.
+
+
+This is where the WebSocket API comes in. WebSockets provide a full-duplex 
+communication channel over a single, long-lived TCP connection, allowing servers 
+to push data to clients in real-time. For an application like a cryptocurrency 
+tracker, this means prices can be updated on the user's screen the moment they 
+change on the exchange.
+
+Building such an application requires a robust frontend architecture. You will 
+need to manage a persistent connection to the WebSocket server, handle a 
+continuous stream of incoming data, efficiently update the UI without performance 
+degradation, and manage application state that includes user portfolios and price 
+alerts. Modern state management libraries (like Zustand, Redux, or MobX) are 
+essential for handling this complexity, while data visualization libraries (like 
+Recharts or Lightweight Charts) are used to present complex financial data in an 
+intuitive way.
+
+Implementation Details
+Your task is to build a single-page application that serves as a cryptocurrency 
+dashboard. The application will fetch initial data from a REST API and then 
+connect to a WebSocket for real-time price updates.
+
+Step 1: Project Setup & Containerization
+Initialize a new React project using your preferred toolchain (e.g., Create React 
+App, Vite). Set up your project to be served by a lightweight web server like 
+Nginx within a Docker container. Create the necessary Dockerfile and 
+docker-compose.yml files.
+Your docker-compose.yml should define a single service for the frontend 
+application.
+# docker-compose.yml
+version: '3.8'
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '8080:80' # Expose port 8080 to access the app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"] # Assumes you add a /health endpoint or file
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+Create a .env.example file to document environment variables. At a minimum, it 
+should contain the WebSocket URL.
+# .env.example
+REACT_APP_BINANCE_WS_URL=wss://stream.binance.com:9443/ws
+REACT_APP_COINGECKO_API_URL=https://api.coingecko.com/api/v3
+
+Step 2: Fetch Initial Data
+On application load, fetch a list of the top 100 cryptocurrencies by market cap 
+from a public API like CoinGecko. This provides the initial dataset, including 
+names, symbols, and historical data for sparklines. Display this data in a list 
+or table view.
+
+Step 3: Implement WebSocket Connection
+Establish a connection to the Binance WebSocket API to subscribe to real-time 
+trade streams for the displayed cryptocurrencies. You will need to handle the 
+connection lifecycle: opening, receiving messages, handling errors, and closing 
+the connection gracefully. Parse incoming messages to extract the latest price 
+for each symbol and update your application's state.
+
+Step 4: Build UI Components
+Develop the core UI components for the dashboard:
+    Crypto List View: A table or list showing each cryptocurrency, its current 
+                     price, 24h change, and a sparkline chart of its recent 
+                     performance.
+    Search/Filter: An input field to allow users to filter the list of 
+                    cryptocurrencies by name or symbol.
+    Portfolio Management: A separate view or modal where users can add 
+                          cryptocurrencies to their personal portfolio by 
+                          specifying the coin, quantity, 
+                          and average purchase price. This data must be 
+                           persisted in localStorage.
+    Price Alerts: A mechanism for users to set price targets for specific coins. 
+                These alerts should also be persisted in localStorage and trigger 
+                a visual notification when a price target is met.
+    Theme Switcher: A button to toggle between light and dark themes.
+
+Step 5: State Management and Data Persistence
+        Use a state management solution like Zustand to manage global state, such 
+        as the list of cryptocurrencies, portfolio data, and WebSocket connection 
+        status. Utilize localStorage to persist the user's portfolio and price 
+        alerts across browser sessions.
+
+Submission Checklist
+Ensure your submission repository contains the following artifacts:
+
+ docker-compose.yml # Main docker compose file.
+ Dockerfile # Dockerfile for the frontend application.
+ .env.example # Example environment variables file.
+ src/ # Directory containing all your application source code.
+ README.md # A detailed README with setup instructions and an overview of your 
+ project.
+ package.json and lock file (package-lock.json or yarn.lock).
+
+ Implementation Guidelines
+These are suggestions to guide your implementation, not strict requirements.
+
+Component Architecture: Structure your application into small, reusable components. For example, CryptoTableRow, PortfolioModal, PriceChart, AlertManager. This improves maintainability and testability.
+State Management: For an application with real-time updates, consider centralizing your crypto data in a global store. Zustand is lightweight and a good choice here. UI state, like the status of a modal, can often be managed locally within the component using useState.
+Performance Optimization: Displaying a list of 100 items that update frequently can be performance-intensive. Use techniques like React.memo to prevent unnecessary re-renders of list items. For very large lists, consider implementing windowing or virtualization to only render the items currently in the viewport.
+WebSocket Management: Wrap your WebSocket logic in a custom hook (e.g., useWebSocket) or a dedicated service to encapsulate connection management, subscriptions, and message handling. Implement retry logic with exponential backoff to automatically reconnect if the WebSocket connection is lost.
+Error Handling: Gracefully handle potential errors, such as a failed API request for initial data or a disconnected WebSocket. Display informative messages to the user in these cases.
+Data Persistence: When interacting with localStorage, always wrap your calls in try...catch blocks, as browser settings can sometimes prevent access, causing your application to crash.
+FAQ
+Q: Do I need an API key for the Binance WebSocket?
+
+A: No, for public market data streams like the one used in this project, you do not need an API key. You can connect directly to the public endpoint.
+Q: How do I subscribe to multiple streams on one WebSocket connection?
+
+A: The Binance WebSocket API allows you to subscribe to multiple streams by sending a JSON message with the method SUBSCRIBE and a params array containing the stream names (e.g., btcusdt@trade, ethusdt@trade).
+Q: My component re-renders too often and the UI is slow. What can I do?
+
+A: This is a common issue with real-time data. Ensure you are using React.memo on your list items. Also, check your state management logic to ensure that only the components that need the new data are re-rendering. Profiling your application with React DevTools can help identify performance bottlenecks.
+Q: How can I test the price alert notification (ref: alert-notification)?
+
+A: You can manually trigger this by setting a price alert very close to the current price of a volatile coin and waiting for it to be crossed. Alternatively, you can temporarily add a button in your UI that manually sets the application's state for a coin's price to a value that would trigger the alert.
+Q: What is the best way to structure my data in localStorage (ref: localstorage-portfolio-schema)?
+
+A: Storing your portfolio as a JSON array of objects is a good approach. Each object can represent a holding and contain properties like id (e.g., 'bitcoin'), quantity, and purchasePrice. Always serialize your data with JSON.stringify before saving and parse it with JSON.parse when retrieving.
+Core Requirements
+1.
+The application must be fully containerized using Docker and Docker Compose. A docker-compose up command should build and start the application, making it accessible on port 8080.
+
+File Location: docker-compose.yml (repository root)
+
+Required Services:
+
+frontend: A service that builds the React application and serves it, for example, using an Nginx container.
+Required Behavior:
+
+The command docker-compose up must successfully start the service without any manual intervention.
+The application must be accessible at http://localhost:8080.
+The frontend service must include a functional healthcheck.
+Verification:
+
+Run docker-compose up -d --build.
+Wait for the frontend service to become healthy.
+Send a GET request to http://localhost:8080.
+Verify a 200 OK response is returned and contains HTML content.
+2.
+A .env.example file must be present in the root of the repository, documenting all necessary environment variables for the application to run.
+
+File Location: .env.example (repository root)
+
+Required Content:
+
+Must contain REACT_APP_BINANCE_WS_URL.
+Must contain REACT_APP_COINGECKO_API_URL.
+Must contain placeholder values, not real secrets.
+Verification:
+
+Check for the existence of the .env.example file in the repository root.
+Parse the file and verify that the specified keys are present.
+3.
+On initial load, the application must fetch and display a list of at least 10 cryptocurrencies.
+
+Required Elements:
+
+The main view must contain a list or table of cryptocurrencies.
+Each item in the list must have a unique data-testid attribute in the format crypto-row-<symbol>, e.g., crypto-row-BTCUSDT.
+Verification:
+
+Load the application at http://localhost:8080.
+Use a testing tool like Playwright to check for the presence of at least 10 elements with a data-testid that starts with crypto-row-.
+Verify that each of these elements is visible.
+4.
+The application must provide an input field that filters the list of cryptocurrencies in real-time as the user types.
+
+Required Elements:
+
+An input element with data-testid="search-input".
+Behavior:
+
+When the application is loaded, multiple crypto-row-* elements are visible.
+Typing a specific symbol (e.g., "DOGE") into the search input should filter the list so that only rows corresponding to that symbol (e.g., crypto-row-DOGEUSDT) remain visible.
+Verification:
+
+Load the application.
+Locate the input element with data-testid="search-input".
+Type "ETH" into the input.
+Verify that the element crypto-row-BTCUSDT is no longer visible.
+Verify that the element crypto-row-ETHUSDT is still visible.
+5.
+The application must establish a connection to the WebSocket server and expose its connection state for verification.
+
+Required Function:
+
+A function must be exposed on the window object: window.getWebSocketState().
+This function must return a string representing the connection state. Expected values are "CONNECTING", "OPEN", "CLOSING", "CLOSED".
+Behavior:
+
+Within 10 seconds of the application loading, the WebSocket connection should be established.
+Verification:
+
+Load the application.
+Wait up to 10 seconds.
+Execute window.getWebSocketState() in the browser console.
+Verify that the returned value is "OPEN".
+6.
+The displayed price for a cryptocurrency must update in real-time based on data received from the WebSocket stream.
+
+Required Elements:
+
+For each crypto row, there must be an element displaying the price with data-testid="price-<symbol>", e.g., price-BTCUSDT.
+Behavior:
+
+The text content of this element must change automatically without a page refresh as new data arrives from the WebSocket.
+Verification:
+
+Load the application.
+Record the initial text content of the element with data-testid="price-BTCUSDT".
+Wait for 5 seconds to allow new messages to be received from the live WebSocket stream.
+Read the text content of the same element again.
+Verify that the new value is different from the initial value.
+7.
+Each cryptocurrency row in the main list must display a small sparkline chart showing recent price trends.
+
+Required Elements:
+
+Within each element identified by data-testid="crypto-row-<symbol>", there must be an svg or canvas element representing the sparkline chart.
+This chart element must have the attribute data-testid="sparkline-<symbol>".
+Verification:
+
+Load the application.
+Query for an element with data-testid="crypto-row-BTCUSDT".
+Within that element, verify the existence of a descendant with data-testid="sparkline-BTCUSDT".
+8.
+The 24-hour price change indicator must visually distinguish between positive and negative changes using a data attribute.
+
+Required Elements:
+
+An element displaying the 24h price change percentage with data-testid="price-change-24h-<symbol>".
+Behavior:
+
+This element must have a data-direction attribute.
+The value of data-direction must be "up" if the 24h change is positive or zero, and "down" if it is negative.
+Verification:
+
+Load the application.
+Locate the element with data-testid="price-change-24h-BTCUSDT".
+Verify that it has a data-direction attribute.
+Verify that the value of the attribute is either "up" or "down".
+9.
+The user's portfolio data must be persisted in localStorage using a specific key and JSON schema.
+
+LocalStorage Key: cryptoPortfolio
+
+Schema:
+
+The value must be a JSON string that parses into an array of objects.
+Each object must contain the following keys:
+id: string (e.g., "bitcoin")
+quantity: number
+purchasePrice: number
+Behavior:
+
+When a user adds a new coin to their portfolio through the UI, an entry adhering to this schema must be added to the array in localStorage.
+Verification:
+
+Clear localStorage.
+Use the UI to add a coin (e.g., 0.5 Bitcoin at a price of 50000) to the portfolio.
+Read the cryptoPortfolio key from localStorage.
+Parse the JSON string and verify it is an array containing an object with id: "bitcoin", quantity: 0.5, and purchasePrice: 50000 (or similar, based on UI interaction).
+10.
+The portfolio view must correctly display the assets that are stored in localStorage.
+
+Required Elements:
+
+A dedicated view or section for the portfolio.
+Each item in the portfolio display must have a data-testid="portfolio-item-<id>" (e.g., portfolio-item-bitcoin).
+Behavior:
+
+The items displayed on the portfolio page must correspond to the data present in the cryptoPortfolio key in localStorage.
+Verification:
+
+Manually set the cryptoPortfolio key in localStorage with mock data: [{"id":"ethereum","quantity":10,"purchasePrice":2000}].
+Refresh the application and navigate to the portfolio view.
+Verify that an element with data-testid="portfolio-item-ethereum" is visible.
+Verify that an element for a non-existent portfolio item (e.g., portfolio-item-dogecoin) is not visible.
+11.
+The portfolio view must display the calculated total value and total profit/loss based on current market prices and the user's portfolio data.
+
+Required Elements:
+
+An element with data-testid="portfolio-total-value".
+An element with data-testid="portfolio-pl" (Profit/Loss).
+Behavior:
+
+These elements must display numerical values calculated from the data in localStorage and the current prices from the WebSocket stream.
+Verification:
+
+Manually set localStorage with a known portfolio (e.g., 2 BTC bought at $20,000).
+Get the current price of BTC from the UI (from data-testid="price-BTCUSDT").
+Calculate the expected total value (2 * current price) and P/L (2 * (current price - 20000)).
+Check the text content of data-testid="portfolio-total-value" and verify it matches the expected total value (within a small tolerance for formatting).
+Check the text content of data-testid="portfolio-pl" and verify it matches the expected P/L.
+12.
+Users must be able to view more details for a specific cryptocurrency, including a larger price chart.
+
+Behavior:
+
+Clicking on a cryptocurrency row (e.g., data-testid="crypto-row-BTCUSDT") should navigate to a new page or open a modal/overlay.
+This detailed view must contain a larger price chart element.
+The chart element must have data-testid="price-chart".
+Verification:
+
+Load the application.
+Click on the element with data-testid="crypto-row-ETHUSDT".
+Verify that an element with data-testid="price-chart" is now visible.
+13.
+Price alerts created by the user must be persisted in localStorage with a specific schema.
+
+LocalStorage Key: cryptoAlerts
+
+Schema:
+
+The value must be a JSON string that parses into an array of objects.
+Each object must contain the following keys:
+id: string (e.g., "bitcoin")
+targetPrice: number
+condition: string (either "above" or "below")
+Verification:
+
+Clear localStorage.
+Use the UI to create a price alert for Bitcoin to trigger above $100,000.
+Read the cryptoAlerts key from localStorage.
+Parse the JSON and verify it contains an object with id: "bitcoin", targetPrice: 100000, and condition: "above".
+14.
+When a cryptocurrency's price crosses a user-defined alert threshold, a visual notification must be displayed.
+
+Required Elements:
+
+A notification element that appears when an alert is triggered, with data-testid="alert-notification-<id>".
+Behavior:
+
+Assume an alert is set for BTC to trigger if the price goes above $50,000.
+When the price of BTC received from the WebSocket is greater than $50,000, the notification should become visible.
+Verification:
+
+Manually set localStorage with an alert for ETH to trigger above a price that is slightly higher than the current price (e.g., current price + $10).
+Wait for the live WebSocket feed to update the price of ETH and cross the threshold.
+Verify that the element data-testid="alert-notification-ethereum" becomes visible within 10 seconds of the price crossing.
+15.
+The application must support toggling between a light and dark theme, and the current theme state must be reflected on the main HTML element.
+
+Required Elements:
+
+A button or toggle switch with data-testid="theme-switcher".
+Behavior:
+
+Clicking the theme switcher should add or remove a class named dark on the <html> or <body> element of the page.
+Verification:
+
+Load the application.
+Check if the <html> element has the class dark. Let's assume it does not by default.
+Click the element with data-testid="theme-switcher".
+Verify that the <html> element now has the class dark.
+Click the button again.
+Verify that the <html> element no longer has the class dark.
